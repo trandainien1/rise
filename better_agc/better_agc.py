@@ -103,7 +103,7 @@ class BetterAGC:
         
         agc_scores = output_mask[:, prediction.item()] - output_truth[0, prediction.item()]
         agc_scores = torch.sigmoid(agc_scores)
-        agc_scores = agc_scores.reshape(head_cams.shape[0], head_cams.shape[1])
+        agc_scores = agc_scores.reshape(head_cams[0].shape[0], head_cams[0].shape[1])
         return agc_scores
 
     def generate_saliency(self, head_cams, agc_scores):
