@@ -125,21 +125,21 @@ class BetterAGC:
         if x.dim() == 3:
             x = x.unsqueeze(dim=0)
 
-        with torch.no_grad():
+        with torch.enable_grad():
             predicted_class, head_cams, output_truth = self.generate_cams_of_heads(x)
 
-            # Define the class to explain. If not explicit, use the class predicted by the model
-            if class_idx is None:
-                class_idx = predicted_class                
-                print("class idx", class_idx)
+        # Define the class to explain. If not explicit, use the class predicted by the model
+        if class_idx is None:
+            class_idx = predicted_class                
+            print("class idx", class_idx)
 
-            # Generate the saliency map for image x and class_idx
-            scores = self.generate_scores(
-                image=x, 
-                head_cams=head_cams, 
-                prediction=predicted_class, output_truth=output_truth
-            )
+        # Generate the saliency map for image x and class_idx
+        scores = self.generate_scores(
+            image=x, 
+            head_cams=head_cams, 
+            prediction=predicted_class, output_truth=output_truth
+        )
 
-            saliency_map = self.generate_saliency(head_cams=head_cams, agc_scores=scores)
+        saliency_map = self.generate_saliency(head_cams=head_cams, agc_scores=scores)
 
-            return saliency_map
+        return saliency_map
