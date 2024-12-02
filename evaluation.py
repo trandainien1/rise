@@ -43,7 +43,7 @@ class CausalMetric():
         self.step = step
         self.substrate_fn = substrate_fn
 
-    def singlerun(self, img_tensor, explanation, verbose=0, save_to=None):
+    def single_run(self, img_tensor, explanation, verbose=0, save_to=None):
         r"""Run metric on one image-saliency pair.
 
         Args:
@@ -58,7 +58,8 @@ class CausalMetric():
         Return:
             scores (nd.array): Array containing scores at every step.
         """
-        pred = self.model(img_tensor)
+        with torch.no_grad():
+            pred = self.model(img_tensor)
         top, c = torch.max(pred, 1)
         c = c.cpu().numpy()[0]
         n_steps = (HW + self.step - 1) // self.step
@@ -78,7 +79,8 @@ class CausalMetric():
         # Coordinates of pixels in order of decreasing saliency
         salient_order = np.flip(np.argsort(explanation.reshape(-1, HW), axis=1), axis=-1)
         for i in range(n_steps+1):
-            pred = self.model(start)
+            with torch.no_grad():
+                pred = self.model(start)
             pr, cl = torch.topk(pred, 2)
             if verbose == 2:
                 print('{}: {:.3f}'.format(get_class_name(cl[0][0]), float(pr[0][0])))
@@ -125,7 +127,8 @@ class CausalMetric():
         predictions = torch.FloatTensor(n_samples, n_classes)
         assert n_samples % batch_size == 0
         for i in tqdm(range(n_samples // batch_size), desc='Predicting labels'):
-            preds = self.model(img_batch[i*batch_size:(i+1)*batch_size]).cpu()
+            with torch.no_grad():
+                preds = self.model(img_batch[i*batch_size:(i+1)*batch_size]).cpu()
             predictions[i*batch_size:(i+1)*batch_size] = preds
         top = np.argmax(predictions, -1)
         n_steps = (HW + self.step - 1) // self.step
@@ -151,7 +154,8 @@ class CausalMetric():
             # Iterate over batches
             for j in range(n_samples // batch_size):
                 # Compute new scores
-                preds = self.model(start[j*batch_size:(j+1)*batch_size])
+                with torch.no_grad():
+                    preds = self.model(start[j*batch_size:(j+1)*batch_size])
                 preds = preds.cpu().numpy()[range(batch_size), top[j*batch_size:(j+1)*batch_size]]
                 scores[i, j*batch_size:(j+1)*batch_size] = preds
             # Change specified number of most salient pixels to substrate pixels
